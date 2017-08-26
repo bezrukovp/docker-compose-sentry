@@ -1,0 +1,55 @@
+version: '2'
+services:
+
+  cron:
+    image: sentry:latest
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    env_file: ${PWD}/.env
+    command:
+    - run
+    - cron
+    labels:
+      io.rancher.container.pull_image: always
+      io.rancher.container.hostname_override: container_name
+
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    labels:
+      io.rancher.container.pull_image: always
+      io.rancher.container.hostname_override: container_name
+
+  sentry:
+    image: sentry:latest
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    expose:
+    - "9000"
+    env_file: ${PWD}/.env
+    command:
+    - /bin/bash
+    - -c
+    - sentry upgrade --noinput && sentry createuser --email ${SENTRY_USER_EMAIL} --password ${SENTRY_USER_PASSWORD} --superuser && /entrypoint.sh run web || /entrypoint.sh run web
+    labels:
+      service: sentry
+      io.rancher.container.pull_image: always
+      io.rancher.container.hostname_override: container_name
+
+  worker:
+    image: sentry:latest
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    env_file: ${PWD}/.env
+    command:
+    - run
+    - worker
+    labels:
+      io.rancher.scheduler.global: 'true'
+      io.rancher.container.pull_image: always
+      io.rancher.container.hostname_override: container_name
